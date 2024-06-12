@@ -1,0 +1,18 @@
+sync:
+  defaults:
+    mode: "two-way-resolved"
+    flushOnCreate: true
+    ignore:
+      vcs: true
+  lisc-train-clustered:
+    alpha: "."
+    beta: "gaskin@login01.lisc.univie.ac.at:~/train-clustered"
+
+forward:
+  lisc:
+    source: tcp:localhost:8888
+    destination: gaskin@login01.lisc.univie.ac.at:tcp:localhost:8888
+
+commands:
+  create-env: ssh -t gaskin@login01.lisc.univie.ac.at micromamba create -f train-clustered/train-clustered.yml -y
+  jupyter: ssh -t gaskin@login01.lisc.univie.ac.at micromamba run -n train-clustered jupyter lab --ip 0.0.0.0 --port 8888 --notebook-dir=~/train-clustered --no-browser --LabApp.token='' -y
