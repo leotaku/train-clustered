@@ -1,0 +1,9 @@
+# Data
+/logs
+/models
+# Python
+__pycache__
+/.ipynb_checkpoints
+/.virtual_documents
+# Mutagen
+/mutagen.yml.lock
