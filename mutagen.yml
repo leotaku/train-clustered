@@ -5,8 +5,14 @@ sync:
     ignore:
       vcs: true
   lisc-train-clustered:
-    alpha: "."
     beta: "gaskin@login01.lisc.univie.ac.at:~/train-clustered"
+    alpha: "."
+  local-lib:
+    alpha: "../toxphacts_pred/common/lib"
+    beta: "./lib"
+  local-models:
+    alpha: "./models"
+    beta: "../toxphacts_pred/models"
 
 forward:
   lisc:
