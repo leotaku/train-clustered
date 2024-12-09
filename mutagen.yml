@@ -15,6 +15,9 @@ sync:
     beta: "../toxphacts_pred/models"
 
 forward:
-  lisc:
+  lisc-jupyter:
     source: tcp:localhost:8888
     destination: gaskin@login01.lisc.univie.ac.at:tcp:localhost:8888
+  lisc-dask:
+    source: tcp:localhost:8787
+    destination: gaskin@login01.lisc.univie.ac.at:tcp:localhost:8787
