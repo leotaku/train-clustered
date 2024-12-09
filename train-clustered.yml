@@ -9,10 +9,12 @@ dependencies:
     - scikit-learn-intelex==2024.3.0
     - xgboost==2.0.3
     - py4j==0.10.9.7
+    - openjdk==22.0.1
     - dask==2024.5.2
     - dask-jobqueue==0.8.5
     # Development
     - pyright==1.1.366
     - ruff==0.4.8
     - jupyterlab==4.2.2
-    - pip:dask_labextension==7.0.0
+    - pip:
+      - dask_labextension==7.0.0
