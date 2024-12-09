@@ -10,6 +10,8 @@ from py4j.java_gateway import JavaGateway, Py4JError
 from rdkit.Chem.rdchem import Mol
 from rdkit.Chem.rdmolfiles import MolToSmiles
 
+from .transformer import DescriptorTransformer
+
 _cdk_jar = Path(__file__).parent.resolve().joinpath("./cdk-2.7.1.jar")
 
 
@@ -24,44 +26,34 @@ class ECFPID(IntEnum):
     FCFP6 = 8
 
 
-class ECFPCalc:
-    def __init__(self, integer_id=ECFPID.ECFP4):
+class ECFPTransformer(DescriptorTransformer):
+    def __init__(self, integer_id=ECFPID.ECFP4, n_bits=1024):
         self.integer_id = integer_id
-        self.init_time = time()
+        self.n_bits = n_bits
 
-        self.gateway: Any = JavaGateway.launch_gateway(
+    def fit(self, X=None, y=None):
+        gateway: Any = JavaGateway.launch_gateway(
             classpath=str(_cdk_jar),
             die_on_exit=True,
         )
 
-        cdk = self.gateway.jvm.org.openscience.cdk
-        builder = cdk.DefaultChemObjectBuilder.getInstance()
-        self.circularFingerprints = cdk.fingerprint.CircularFingerprinter(
-            int(integer_id)
+        cdk = gateway.jvm.org.openscience.cdk
+
+        self.circularFingerprinter_ = cdk.fingerprint.CircularFingerprinter(
+            int(self.integer_id)
         )
-        self.smiles_parser = cdk.smiles.SmilesParser(builder)
+        self.smilesParser_ = cdk.smiles.SmilesParser(
+            cdk.DefaultChemObjectBuilder.getInstance()
+        )
+        self.init_time = time()
 
-    def __getstate__(self):
-        return self.integer_id
+        return self
 
-    def __setstate__(self, integer_id):
-        self.__init__(integer_id)
-
-    @staticmethod
-    def get_bit_vector(indexes):
-        idx = np.zeros(1024, dtype=int)  # Just pre-defined as in Naga's code
-        idx[indexes] = 1
-        return idx
-
-    def mol_to_cdk_mol(self, mol: Mol):
-        smiles = MolToSmiles(mol)
-        return self.smiles_parser.parseSmiles(smiles)
-
-    def __call__(self, mol: Mol):
+    def transform_one(self, X):
         try:
-            cdk_mol = self.mol_to_cdk_mol(mol)
+            mol = self.mol_to_cdk_mol(X)
             ecfp4 = np.array(
-                (self.circularFingerprints.getBitFingerprint(cdk_mol).getSetbits()),
+                (self.circularFingerprinter_.getBitFingerprint(mol).getSetbits()),
                 dtype=int,
             )
             return self.get_bit_vector(ecfp4)
@@ -69,5 +61,18 @@ class ECFPCalc:
             if self.init_time + 10 >= time():
                 raise Exception("Restarted too fast") from e
 
-            self.__init__(self.integer_id)
-            return self.__call__(mol)
+            self.fit()
+            return self.transform_one(X)
+
+    def get_feature_names_out(self, input_features=None):
+        return [f"x{i}" for i in range(self.n_bits)]
+
+    def mol_to_cdk_mol(self, mol: Mol):
+        smiles = MolToSmiles(mol)
+        return self.smilesParser_.parseSmiles(smiles)
+
+    @staticmethod
+    def get_bit_vector(indexes):
+        idx = np.zeros(1024, dtype=np.float_)
+        idx[indexes] = 1
+        return idx
